@@ -1,0 +1,36 @@
+# Pipeline Trigger: Runs automatically when changes hit the 'main' branch
+trigger:
+  branches:
+    include:
+      - main
+
+# Define the runner OS (Microsoft-hosted Ubuntu Linux agent)
+pool:
+  vmImage: 'ubuntu-latest'
+
+stages:
+- stage: BuildAndValidate
+  displayName: 'Build & Package Stage'
+  jobs:
+  - job: ValidateHTML
+    displayName: 'Validate and Archive Static Web Page'
+    steps:
+    - checkout: self
+
+    # Step 1: Run a simple bash check
+    - script: |
+        echo "Testing build context..."
+        if [ -f index.html ]; then
+          echo "index.html exists and is ready for packaging!"
+        else
+          echo "Error: index.html not found!" && exit 1
+        fi
+      displayName: 'Verify index.html exists'
+
+    # Step 2: Publish the HTML file as an artifact
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: '$(System.DefaultWorkingDirectory)'
+        ArtifactName: 'drop'
+        publishLocation: 'Container'
+      displayName: 'Publish Website Artifact'
