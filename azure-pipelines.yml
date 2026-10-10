@@ -1,12 +1,10 @@
-# Pipeline Trigger: Runs automatically when changes hit the 'main' branch
 trigger:
   branches:
     include:
       - main
 
-# Define the runner OS (Microsoft-hosted Ubuntu Linux agent)
 pool:
-  vmImage: 'ubuntu-latest'
+  name: 'Default'
 
 stages:
 - stage: BuildAndValidate
@@ -17,17 +15,16 @@ stages:
     steps:
     - checkout: self
 
-    # Step 1: Run a simple bash check
-    - script: |
-        echo "Testing build context..."
-        if [ -f index.html ]; then
-          echo "index.html exists and is ready for packaging!"
-        else
-          echo "Error: index.html not found!" && exit 1
-        fi
+    - powershell: |
+        Write-Host "Running automated CI build on self-hosted agent BALAJI-PC..."
+        if (Test-Path "index.html") {
+            Write-Host "SUCCESS: index.html is present!"
+        } else {
+            Write-Error "ERROR: index.html not found!"
+            exit 1
+        }
       displayName: 'Verify index.html exists'
 
-    # Step 2: Publish the HTML file as an artifact
     - task: PublishBuildArtifacts@1
       inputs:
         PathtoPublish: '$(System.DefaultWorkingDirectory)'
