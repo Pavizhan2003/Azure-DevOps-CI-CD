@@ -55,6 +55,8 @@ stages:
         scriptType: 'ps'
         scriptLocation: 'inlineScript'
         inlineScript: |
+          $ErrorActionPreference = 'Stop'
+
           Write-Host "Authenticating to AKS..."
           az aks get-credentials --resource-group $(aksResourceGroup) --name $(aksClusterName) --admin --overwrite-existing
 
