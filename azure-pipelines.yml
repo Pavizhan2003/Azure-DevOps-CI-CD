@@ -57,15 +57,12 @@ stages:
         inlineScript: |
           $ErrorActionPreference = 'Stop'
 
-          Write-Host "Fetching Entra ID credentials for AKS..."
-          az aks get-credentials --resource-group $(aksResourceGroup) --name $(aksClusterName) --overwrite-existing
-
-          Write-Host "Converting kubeconfig to Service Principal mode..."
-          kubelogin convert-kubeconfig -l spn
+          Write-Host "Authenticating to AKS via local admin credentials..."
+          az aks get-credentials --resource-group $(aksResourceGroup) --name $(aksClusterName) --admin --overwrite-existing
 
           Write-Host "Deploying manifests to namespace pavizhan..."
           kubectl apply -f k8s/deployment.yaml
           kubectl apply -f k8s/service.yaml
 
-          Write-Host "Triggering rolling restart to fetch latest image..."
+          Write-Host "Triggering rolling restart..."
           kubectl rollout restart deployment/my-html-deployment -n pavizhan
