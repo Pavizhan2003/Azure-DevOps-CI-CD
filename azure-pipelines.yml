@@ -7,8 +7,7 @@ pool:
   name: 'Default'
 
 variables:
-  # Replace with your actual Azure Container Registry name
-  acrName: 'pzacregistry'
+  acrName: 'pztestregistry'
   imageName: 'my-html-app'
 
 stages:
@@ -24,7 +23,7 @@ stages:
       displayName: 'Trigger az acr build'
       inputs:
         azureSubscription: 'azure-connection'
-        scriptType: 'pscore'
+        scriptType: 'ps'                       # <--- CHANGED FROM 'pscore' TO 'ps'
         scriptLocation: 'inlineScript'
         inlineScript: |
           Write-Host "Triggering cloud build on ACR: $(acrName)..."
