@@ -9,13 +9,19 @@ pool:
 variables:
   acrName: 'pzacregistry'
   imageName: 'my-html-app'
+  # Update these two variables to match your AKS cluster details:
+  aksClusterName: 'AKS-learnings-cluster'
+  aksResourceGroup: 'AKS-learning'
 
 stages:
-- stage: Containerize
-  displayName: 'Build Container via ACR'
+# -------------------------------------------------------------
+# STAGE 1: Continuous Integration (Cloud Build to ACR)
+# -------------------------------------------------------------
+- stage: Build
+  displayName: 'Build & Push to ACR'
   jobs:
   - job: ACRBuild
-    displayName: 'Cloud Build and Push to ACR'
+    displayName: 'Cloud Build via ACR Tasks'
     steps:
     - checkout: self
 
@@ -23,8 +29,38 @@ stages:
       displayName: 'Trigger az acr build'
       inputs:
         azureSubscription: 'azure-connection'
-        scriptType: 'ps'                       # <--- CHANGED FROM 'pscore' TO 'ps'
+        scriptType: 'ps'
         scriptLocation: 'inlineScript'
         inlineScript: |
           Write-Host "Triggering cloud build on ACR: $(acrName)..."
           az acr build --registry $(acrName) --image $(imageName):$(Build.BuildId) --image $(imageName):latest .
+
+# -------------------------------------------------------------
+# STAGE 2: Continuous Deployment (Rollout to AKS)
+# -------------------------------------------------------------
+- stage: Deploy
+  displayName: 'Deploy to AKS'
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - job: DeployToAKS
+    displayName: 'Apply Manifests to Cluster'
+    steps:
+    - checkout: self
+
+    - task: AzureCLI@2
+      displayName: 'Get AKS Credentials & Deploy'
+      inputs:
+        azureSubscription: 'azure-connection'
+        scriptType: 'ps'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          Write-Host "Authenticating to AKS..."
+          az aks get-credentials --resource-group $(aksResourceGroup) --name $(aksClusterName) --overwrite-existing
+
+          Write-Host "Deploying manifests to namespace pavizhan..."
+          kubectl apply -f k8s/deployment.yaml
+          kubectl apply -f k8s/service.yaml
+
+          Write-Host "Triggering rolling restart to fetch latest image..."
+          kubectl rollout restart deployment/my-html-deployment -n pavizhan
