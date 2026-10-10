@@ -56,7 +56,7 @@ stages:
         scriptLocation: 'inlineScript'
         inlineScript: |
           Write-Host "Authenticating to AKS..."
-          az aks get-credentials --resource-group $(aksResourceGroup) --name $(aksClusterName) --overwrite-existing
+          az aks get-credentials --resource-group $(aksResourceGroup) --name $(aksClusterName) --admin --overwrite-existing
 
           Write-Host "Deploying manifests to namespace pavizhan..."
           kubectl apply -f k8s/deployment.yaml
