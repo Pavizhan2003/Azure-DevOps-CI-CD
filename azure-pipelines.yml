@@ -6,28 +6,26 @@ trigger:
 pool:
   name: 'Default'
 
+variables:
+  # Replace with your actual Azure Container Registry name
+  acrName: 'pzacregistry'
+  imageName: 'my-html-app'
+
 stages:
-- stage: BuildAndValidate
-  displayName: 'Build & Package Stage'
+- stage: Containerize
+  displayName: 'Build Container via ACR'
   jobs:
-  - job: ValidateHTML
-    displayName: 'Validate and Archive Static Web Page'
+  - job: ACRBuild
+    displayName: 'Cloud Build and Push to ACR'
     steps:
     - checkout: self
 
-    - powershell: |
-        Write-Host "Running automated CI build on self-hosted agent BALAJI-PC..."
-        if (Test-Path "index.html") {
-            Write-Host "SUCCESS: index.html is present!"
-        } else {
-            Write-Error "ERROR: index.html not found!"
-            exit 1
-        }
-      displayName: 'Verify index.html exists'
-
-    - task: PublishBuildArtifacts@1
+    - task: AzureCLI@2
+      displayName: 'Trigger az acr build'
       inputs:
-        PathtoPublish: '$(System.DefaultWorkingDirectory)'
-        ArtifactName: 'drop'
-        publishLocation: 'Container'
-      displayName: 'Publish Website Artifact'
+        azureSubscription: 'azure-connection'
+        scriptType: 'pscore'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          Write-Host "Triggering cloud build on ACR: $(acrName)..."
+          az acr build --registry $(acrName) --image $(imageName):$(Build.BuildId) --image $(imageName):latest .
