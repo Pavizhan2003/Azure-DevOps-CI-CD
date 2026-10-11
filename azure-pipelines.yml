@@ -36,7 +36,7 @@ stages:
           az acr build --registry $(acrName) --image $(imageName):$(Build.BuildId) --image $(imageName):latest .
 
 # -------------------------------------------------------------
-# STAGE 2: Continuous Deployment (Rollout to AKS)
+# STAGE 2: Continuous Deployment (Rollout to AKS).
 # -------------------------------------------------------------
 - stage: Deploy
   displayName: 'Deploy to AKS'
